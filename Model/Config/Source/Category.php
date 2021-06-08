@@ -10,17 +10,17 @@ class Category implements \Magento\Framework\Data\OptionSourceInterface
     /**
      * @var \Magento\Catalog\Model\ResourceModel\Category\CollectionFactory
      */
-    private $categoryCollectionFactory;
+    protected $categoryCollectionFactory;
 
     /**
      * @var Category\NodeFactory
      */
-    private $nodeFactory;
+    protected $nodeFactory;
 
     /**
      * @var Category\Node
      */
-    private $categories;
+    protected $categories;
 
     public function __construct(
         \Magento\Catalog\Model\ResourceModel\Category\CollectionFactory $categoryCollectionFactory,
@@ -35,23 +35,42 @@ class Category implements \Magento\Framework\Data\OptionSourceInterface
         return static::MAX_DEPTH;
     }
 
-    protected function loadCategories() {
+
+    /**
+     * @return \Magento\Catalog\Model\ResourceModel\Category\Collection
+     */
+    public function getCategoryCollection()
+    {
         /**
          * @var \Magento\Catalog\Model\ResourceModel\Category\Collection $categoryCollection
          */
         $categoryCollection = $this->categoryCollectionFactory->create();
         $categoryCollection->setStoreId(\Magento\Store\Model\Store::DEFAULT_STORE_ID);
         $categoryCollection->addNameToResult();
+        $categoryCollection->addOrder('level', Collection::SORT_ORDER_ASC);
         $categoryCollection->addOrder('parent_id', Collection::SORT_ORDER_ASC);
         $categoryCollection->addOrder('position', Collection::SORT_ORDER_ASC);
+        return $categoryCollection;
+    }
+
+    /**
+     * @param \Magento\Catalog\Model\ResourceModel\Category\Collection $categoryCollection
+     */
+    public function filterCategoryCollection($categoryCollection)
+    {
         $categoryCollection->addFieldToFilter('level', ['lteq' => $this->getMaxDepth()]);
+    }
+
+    public function loadCategories()
+    {
+        $categoryCollection = $this->getCategoryCollection();
+        $this->filterCategoryCollection($categoryCollection);
 
         $this->categories = $this->nodeFactory->create([
             'id' => 0,
             'name' => 'Base category',
         ]);
 
-        // Initial pass: load categories that can be loaded in order from DB
         $parents = [];
         $orphans = [];
         foreach ($categoryCollection as $category) {
@@ -80,23 +99,7 @@ class Category implements \Magento\Framework\Data\OptionSourceInterface
             }
         }
 
-        // Secondary pass: attempt to add any orphaned nodes (probably just have out-of-order parent IDs)
-        $tryAgain = true;
-        while (count($orphans) > 0 && $tryAgain) {
-            $tryAgain = false;
-            foreach ($orphans as $parentId => $nodes) {
-                if (!isset($parents[$parentId])) {
-                    continue;
-                }
-                $tryAgain = true;
-                $parent = $parents[$parentId];
-                foreach ($nodes as $node) {
-                    $parent->children[] = $node;
-                    $parents[$node->id] = $node;
-                }
-                unset($orphans[$parentId]);
-            }
-        }
+        // N.B. $orphans should be empty here
     }
 
     /**
