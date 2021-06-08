@@ -47,6 +47,7 @@ class Category implements \Magento\Framework\Data\OptionSourceInterface
         $categoryCollection = $this->categoryCollectionFactory->create();
         $categoryCollection->setStoreId(\Magento\Store\Model\Store::DEFAULT_STORE_ID);
         $categoryCollection->addNameToResult();
+        $categoryCollection->addOrder('level', Collection::SORT_ORDER_ASC);
         $categoryCollection->addOrder('parent_id', Collection::SORT_ORDER_ASC);
         $categoryCollection->addOrder('position', Collection::SORT_ORDER_ASC);
         return $categoryCollection;
@@ -70,7 +71,6 @@ class Category implements \Magento\Framework\Data\OptionSourceInterface
             'name' => 'Base category',
         ]);
 
-        // Initial pass: load categories that can be loaded in order from DB
         $parents = [];
         $orphans = [];
         foreach ($categoryCollection as $category) {
@@ -99,23 +99,7 @@ class Category implements \Magento\Framework\Data\OptionSourceInterface
             }
         }
 
-        // Secondary pass: attempt to add any orphaned nodes (probably just have out-of-order parent IDs)
-        $tryAgain = true;
-        while (count($orphans) > 0 && $tryAgain) {
-            $tryAgain = false;
-            foreach ($orphans as $parentId => $nodes) {
-                if (!isset($parents[$parentId])) {
-                    continue;
-                }
-                $tryAgain = true;
-                $parent = $parents[$parentId];
-                foreach ($nodes as $node) {
-                    $parent->children[] = $node;
-                    $parents[$node->id] = $node;
-                }
-                unset($orphans[$parentId]);
-            }
-        }
+        // N.B. $orphans should be empty here
     }
 
     /**
