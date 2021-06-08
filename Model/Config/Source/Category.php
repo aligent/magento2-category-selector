@@ -10,17 +10,17 @@ class Category implements \Magento\Framework\Data\OptionSourceInterface
     /**
      * @var \Magento\Catalog\Model\ResourceModel\Category\CollectionFactory
      */
-    private $categoryCollectionFactory;
+    protected $categoryCollectionFactory;
 
     /**
      * @var Category\NodeFactory
      */
-    private $nodeFactory;
+    protected $nodeFactory;
 
     /**
      * @var Category\Node
      */
-    private $categories;
+    protected $categories;
 
     public function __construct(
         \Magento\Catalog\Model\ResourceModel\Category\CollectionFactory $categoryCollectionFactory,
@@ -35,7 +35,12 @@ class Category implements \Magento\Framework\Data\OptionSourceInterface
         return static::MAX_DEPTH;
     }
 
-    protected function loadCategories() {
+
+    /**
+     * @return \Magento\Catalog\Model\ResourceModel\Category\Collection
+     */
+    public function getCategoryCollection()
+    {
         /**
          * @var \Magento\Catalog\Model\ResourceModel\Category\Collection $categoryCollection
          */
@@ -44,7 +49,21 @@ class Category implements \Magento\Framework\Data\OptionSourceInterface
         $categoryCollection->addNameToResult();
         $categoryCollection->addOrder('parent_id', Collection::SORT_ORDER_ASC);
         $categoryCollection->addOrder('position', Collection::SORT_ORDER_ASC);
+        return $categoryCollection;
+    }
+
+    /**
+     * @param \Magento\Catalog\Model\ResourceModel\Category\Collection $categoryCollection
+     */
+    public function filterCategoryCollection($categoryCollection)
+    {
         $categoryCollection->addFieldToFilter('level', ['lteq' => $this->getMaxDepth()]);
+    }
+
+    public function loadCategories()
+    {
+        $categoryCollection = $this->getCategoryCollection();
+        $this->filterCategoryCollection($categoryCollection);
 
         $this->categories = $this->nodeFactory->create([
             'id' => 0,
