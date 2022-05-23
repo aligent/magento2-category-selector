@@ -1,6 +1,5 @@
 {
-    "name": "aligent/category-selector",
-    "version": "0.1.0",
+    "name": "aligent/magento2-category-selector",
     "description": "A basic category selector for M2, for use in e.g. configuration fields",
     "type": "magento2-module",
     "require": {
@@ -8,7 +7,7 @@
         "magento/framework": "*"
     },
     "license": [
-        "Proprietary"
+        "GPL-3.0-only"
     ],
     "autoload": {
         "files": [
