@@ -3,7 +3,7 @@
     "description": "A basic category selector for M2, for use in e.g. configuration fields",
     "type": "magento2-module",
     "require": {
-        "php": ">7.0",
+        "php": ">=7.0",
         "magento/framework": "*"
     },
     "license": [
